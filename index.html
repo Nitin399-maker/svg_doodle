@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI SVG Hand-drawn Animation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container-fluid p-3">
+        <h1 class="text-center mb-4">AI SVG Hand-drawn Animation</h1>
+        
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">AI SVG Generator</h5>
+                        <button id="config-btn" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-gear"></i> Config LLM
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">SVG Prompt</label>
+                            <textarea id="prompt" class="form-control mb-2" rows="3" placeholder="Example: Draw a simple house with windows and door">Draw a simple house with windows and door</textarea>
+                            <button id="generate-svg" class="btn btn-primary">
+                                <i class="bi bi-magic"></i> Generate SVG
+                            </button>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Generated SVG (editable)</label>
+                            <textarea id="svgInput" class="form-control mb-2" rows="6" style="font-family:monospace;font-size:12px" placeholder="Generated SVG will appear here..."></textarea>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label">Roughness</label>
+                                <div class="d-flex gap-2">
+                                    <input type="range" class="form-range" id="r" min="0.1" max="3" step="0.1" value="1">
+                                    <input type="number" class="form-control" id="rv" min="0.1" max="3" step="0.1" value="1" style="width:70px">
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Stroke Width</label>
+                                <div class="d-flex gap-2">
+                                    <input type="range" class="form-range" id="w" min="1" max="10" step="0.5" value="2">
+                                    <input type="number" class="form-control" id="wv" min="1" max="10" step="0.5" value="2" style="width:70px">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label">Duration (ms)</label>
+                                <div class="d-flex gap-2">
+                                    <input type="range" class="form-range" id="d" min="1000" max="8000" step="100" value="3000">
+                                    <input type="number" class="form-control" id="dv" min="1000" max="8000" step="100" value="3000" style="width:70px">
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Animation</label>
+                                <select class="form-select" id="t">
+                                    <option value="0">Delayed</option>
+                                    <option value="1">Sync</option>
+                                    <option value="2">One by One</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Stroke Color</label>
+                            <input type="color" class="form-control form-control-color" id="c" value="#333333">
+                        </div>
+                        
+                        <div class="text-center">
+                            <button id="a" class="btn btn-success me-2" disabled>
+                                <i class="bi bi-play-fill"></i> Animate
+                            </button>
+                            <button id="reset" class="btn btn-warning" disabled>
+                                <i class="bi bi-arrow-clockwise"></i> Reset
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">Animation Output</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="o" class="border rounded d-flex align-items-center justify-content-center bg-white" style="min-height:400px">
+                            <p class="text-muted text-center">
+                                <i class="bi bi-lightbulb display-4 d-block mb-2"></i>
+                                Generate SVG from prompt, then animate
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast container for alerts -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toast-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script type="module" src="script.js"></script>
+</body>
+</html>
