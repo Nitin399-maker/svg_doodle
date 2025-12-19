@@ -1,16 +1,15 @@
 import { bootstrapAlert } from "https://cdn.jsdelivr.net/npm/bootstrap-alert@1";
 import { openaiConfig } from "https://cdn.jsdelivr.net/npm/bootstrap-llm-provider@1.2";
 import { render, html } from "https://cdn.jsdelivr.net/npm/lit-html@3/+esm";
-
 let tl = null, svg = null, provider = null;
 let demos = [];
-let currentModel = "gpt-5";
-
+let currentModel = "gemini-3-pro-preview";
 const initLLM = async (show = false) => {
     try {
         const cfg = await openaiConfig({
             title: "LLM Configuration for SVG Generator",
-            defaultBaseUrls: ["https://api.openai.com/v1", "https://openrouter.ai/api/v1"],
+            baseUrlLabel: "Open Router Base URL",
+            defaultBaseUrls: ["https://openrouter.ai/api/v1"],
             show
         });
         provider = { baseUrl: cfg.baseUrl, apiKey: cfg.apiKey, model: cfg.model };
@@ -19,7 +18,6 @@ const initLLM = async (show = false) => {
         bootstrapAlert({ body: `Failed to configure LLM: ${e.message}`, color: 'danger' });
     }
 };
-
 // Load demo configuration
 const loadConfig = async () => {
     const container = document.getElementById("demo-cards");
@@ -29,7 +27,6 @@ const loadConfig = async () => {
         </div>`,
         container
     );
-    
     try {
         const resp = await fetch("./config.json", { cache: "no-store" });
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
@@ -44,7 +41,6 @@ const loadConfig = async () => {
         );
     }
 };
-
 // Render demo cards
 const renderDemoCards = () => {
     const demoCardsContainer = document.getElementById("demo-cards");
@@ -65,7 +61,6 @@ const renderDemoCards = () => {
     render(cardsTemplate, demoCardsContainer);
     demoCardsContainer.addEventListener("click", handleDemoCardClick);
 };
-
 // Handle demo card clicks
 const handleDemoCardClick = (event) => {
     const card = event.target.closest('.demo-card');
@@ -82,11 +77,15 @@ const handleDemoCardClick = (event) => {
         bootstrapAlert({body:`${selectedDemo.title} loaded! You can now animate`, color:'success' });
     }
 };
-
 // Generate SVG
 const genSVG = async () => {
     const p = document.getElementById('prompt').value.trim();
     if (!p) return bootstrapAlert({ body: 'Enter prompt', color: 'warning' });
+    
+    // Clear the SVG input field every time generate is clicked
+    document.getElementById('svgInput').value = '';
+    document.getElementById('a').disabled = true;
+    
     if (!provider) {
         await initLLM();
         if (!provider) throw new Error("LLM not configured. Please click 'Config LLM' first.");
@@ -95,7 +94,6 @@ const genSVG = async () => {
     btn.disabled = true;
     const originalHTML = btn.innerHTML;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating...';
-    
     try {
         const systemPrompt = document.getElementById('system-prompt').value.trim();
         currentModel = document.getElementById('model-select').value
@@ -103,11 +101,10 @@ const genSVG = async () => {
             method: 'POST',
             headers: {'Content-Type':'application/json','Authorization':`Bearer ${provider.apiKey}`},
             body: JSON.stringify({
-                model: currentModel,
+                model: `google/${currentModel}`,
                 messages: [{ role: 'system', content: systemPrompt },{ role: 'user', content: p }]
             })
         });
-        
         if (!res.ok) throw new Error(`API Error: ${res.status}`);
         const data = await res.json();
         let svgContent = data.choices[0].message.content;
@@ -126,14 +123,12 @@ const genSVG = async () => {
         btn.innerHTML = originalHTML;
     }
 };
-
 // Sync controls
 [['r','rv'],['w','wv'],['d','dv']].forEach(([a,b]) => {
     const [x,y] = [document.getElementById(a), document.getElementById(b)];
     x.oninput = () => y.value = x.value;
     y.oninput = () => x.value = y.value;
 });
-
 // Generate rough path
 const rough = (p, r) => {
     const len = p.getTotalLength(), segs = Math.max(10, len/5);
@@ -147,7 +142,6 @@ const rough = (p, r) => {
     }
     return path;
 };
-
 // Create strokes
 const strokes = (p, r, w, c) => {
     const n = r > 2 ? 3 : r > 1 ? 2 : 1, arr = [];
@@ -167,29 +161,23 @@ const strokes = (p, r, w, c) => {
     }
     return arr;
 };
-
 // Animation
 const animate = () => {
     try {
         if (tl) { tl.pause(); tl = null; }
-        
         const input = document.getElementById('svgInput').value.trim();
         if (!input) return bootstrapAlert({ body: 'Load a demo or generate SVG first!', color: 'warning' });
-        
         const doc = new DOMParser().parseFromString(input, 'image/svg+xml');
         if (doc.querySelector('parsererror')) return bootstrapAlert({ body: 'Invalid SVG', color: 'danger' });
-
         const svgEl = doc.documentElement;
         if (svgEl.tagName !== 'svg') return bootstrapAlert({ body: 'Must be <svg>', color: 'danger' });
-        
         const paths = svgEl.querySelectorAll('path');
         if (!paths.length) return bootstrapAlert({ body: 'No paths found', color: 'danger' });
-
         const [r, w, c, dur, type] = [
-            +document.getElementById('r').value, 
-            +document.getElementById('w').value, 
-            document.getElementById('c').value, 
-            +document.getElementById('d').value, 
+            +document.getElementById('r').value,
+            +document.getElementById('w').value,
+            document.getElementById('c').value,
+            +document.getElementById('d').value,
             +document.getElementById('t').value
         ];
         const out = document.getElementById('o');
@@ -251,7 +239,6 @@ const animate = () => {
         bootstrapAlert({ body: `Error: ${e.message}`, color: 'danger' });
     }
 };
-
 // Reset
 const reset = () => {
     if (!svg) return;
@@ -263,18 +250,15 @@ const reset = () => {
     });
     bootstrapAlert({ body: 'Animation reset', color: 'info' });
 };
-
 // Event listeners
 document.getElementById('config-btn').addEventListener('click', () => initLLM(true));
 document.getElementById('generate-svg').addEventListener('click', genSVG);
 document.getElementById('a').addEventListener('click', animate);
 document.getElementById('reset').addEventListener('click', reset);
-
 // Model selection
 document.getElementById('model-select').addEventListener('change', (e) => {
     currentModel = e.target.value;
 });
-
 // Keyboard shortcut for prompt
 document.getElementById('prompt').addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -282,12 +266,10 @@ document.getElementById('prompt').addEventListener('keydown', (e) => {
         genSVG();
     }
 });
-
 // Initialize
 document.addEventListener("DOMContentLoaded", () => {
     loadConfig();
 });
-
 // Initialize LLM - Try to load existing config
 initLLM().then(() => {
     if (provider) {bootstrapAlert({ body: 'LLM configuration loaded successfully', color: 'info' });
